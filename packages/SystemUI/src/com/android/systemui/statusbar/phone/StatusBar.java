@@ -246,6 +246,7 @@ import com.android.systemui.statusbar.policy.RemoteInputQuickSettingsDisabler;
 import com.android.systemui.statusbar.policy.UserInfoControllerImpl;
 import com.android.systemui.statusbar.policy.UserSwitcherController;
 import com.android.systemui.tuner.TunerService;
+import com.android.systemui.util.leak.RotationUtils;
 import com.android.systemui.volume.VolumeComponent;
 
 import lineageos.providers.LineageSettings;
@@ -320,6 +321,10 @@ public class StatusBar extends SystemUI implements DemoMode,
             "system:" + Settings.System.NOTIFICATION_MATERIAL_DISMISS;
     private static final String BERRY_SWITCH_STYLE =
             "system:" + Settings.System.BERRY_SWITCH_STYLE;
+    private static final String DISPLAY_CUTOUT_MODE =
+            "system:" + Settings.System.DISPLAY_CUTOUT_MODE;
+    private static final String STOCK_STATUSBAR_IN_HIDE =
+            "system:" + Settings.System.STOCK_STATUSBAR_IN_HIDE;
 
     private static final String BANNER_ACTION_CANCEL =
             "com.android.systemui.statusbar.banner_action_cancel";
@@ -783,6 +788,10 @@ public class StatusBar extends SystemUI implements DemoMode,
     private OverlayManager mOverlayManager;
     private final UiOffloadThread mUiOffloadThread = Dependency.get(UiOffloadThread.class);
 
+    private int mImmerseMode;
+    private boolean mStockStatusBar = true;
+    private boolean mPortrait = true;
+
     /**
      * Public constructor for StatusBar.
      *
@@ -995,6 +1004,8 @@ public class StatusBar extends SystemUI implements DemoMode,
         mTunerService.addTunable(this, BERRY_QS_TILE_STYLE);
         mTunerService.addTunable(this, NOTIFICATION_MATERIAL_DISMISS);
         mTunerService.addTunable(this, BERRY_SWITCH_STYLE);
+        mTunerService.addTunable(this, DISPLAY_CUTOUT_MODE);
+        mTunerService.addTunable(this, STOCK_STATUSBAR_IN_HIDE);
 
         mDisplayManager = mContext.getSystemService(DisplayManager.class);
 
@@ -1260,6 +1271,7 @@ public class StatusBar extends SystemUI implements DemoMode,
                             mStatusBarView.findViewById(R.id.notification_lights_out));
                     mNotificationShadeWindowViewController.setStatusBarView(mStatusBarView);
                     checkBarModes();
+                    handleCutout();
                 }).getFragmentManager()
                 .beginTransaction()
                 .replace(R.id.status_bar_container, new CollapsedStatusBarFragment(),
@@ -3231,12 +3243,20 @@ public class StatusBar extends SystemUI implements DemoMode,
         updateResources();
         updateDisplaySize(); // populates mDisplayMetrics
 
+        mPortrait = RotationUtils.getExactRotation(mContext) == RotationUtils.ROTATION_NONE;
+
         if (DEBUG) {
             Log.v(TAG, "configuration changed: " + mContext.getResources().getConfiguration());
         }
 
         mViewHierarchyManager.updateRowStates();
         mScreenPinningRequest.onConfigurationChanged();
+
+        if (mImmerseMode == 1) {
+            mUiOffloadThread.execute(() -> {
+                setBlackStatusBar(mPortrait);
+            });
+        }
     }
 
     /**
@@ -4907,6 +4927,22 @@ public class StatusBar extends SystemUI implements DemoMode,
                     updateSwitchStyle();
                 }
                 break;
+            case DISPLAY_CUTOUT_MODE:
+                int immerseMode =
+                        TunerService.parseInteger(newValue, 0);
+                if (mImmerseMode != immerseMode) {
+                    mImmerseMode = immerseMode;
+                    handleCutout();
+                }
+                break;
+            case STOCK_STATUSBAR_IN_HIDE:
+                boolean stockStatusBar =
+                        TunerService.parseIntegerSwitch(newValue, true);
+                if (mStockStatusBar != stockStatusBar) {
+                    mStockStatusBar = stockStatusBar;
+                    handleCutout();
+                }
+                break;
             default:
                 break;
          }
@@ -4938,5 +4974,26 @@ public class StatusBar extends SystemUI implements DemoMode,
                   currentActivity.getShortClassName().trim();
         }
         return null;
+    }
+
+    private void setBlackStatusBar(boolean enable) {
+        if (getStatusBarTransitions() == null) return;
+        if (enable) {
+            getStatusBarTransitions().getBackground().setColorOverride(new Integer(0xFF000000));
+        } else {
+            getStatusBarTransitions().getBackground().setColorOverride(null);
+        }
+    }
+
+    private void handleCutout() {
+        final boolean immerseMode = mImmerseMode == 1;
+        final boolean hideCutoutMode = mImmerseMode == 2;
+
+        mUiOffloadThread.execute(() -> {
+            setBlackStatusBar(mPortrait && immerseMode);
+            ThemeAccentUtils.setImmersiveOverlay(mOverlayManager, immerseMode || hideCutoutMode);
+            ThemeAccentUtils.setCutoutOverlay(mOverlayManager, hideCutoutMode);
+            ThemeAccentUtils.setStatusBarStockOverlay(mOverlayManager, hideCutoutMode && mStockStatusBar);
+        });
     }
 }
