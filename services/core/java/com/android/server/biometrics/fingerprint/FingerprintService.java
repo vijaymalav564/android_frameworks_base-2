@@ -116,6 +116,12 @@ public class FingerprintService extends BiometricServiceBase {
     private final boolean mHasFod;
     private boolean mIsKeyguard;
 
+    public boolean isScreenOnWhenFingerdown = false;
+    public long mOpId;
+    public String mOpPackage;
+    BiometricAuthenticator.Identifier identifier;
+    ArrayList<Byte> token;
+
     private final class ResetFailedAttemptsForUserRunnable implements Runnable {
         @Override
         public void run() {
@@ -274,6 +280,8 @@ public class FingerprintService extends BiometricServiceBase {
                 Binder.restoreCallingIdentity(identity);
             }
 
+            if (mHasPowerButtonFingerprint)
+                saveAuthenticateConfig(opId, opPackageName);
             updateActiveGroup(userId, opPackageName);
             final boolean restricted = isRestricted();
             final AuthenticationClientImpl client = new FingerprintAuthClient(getContext(),
@@ -710,6 +718,34 @@ public class FingerprintService extends BiometricServiceBase {
                 }
                 FingerprintService.super.handleAcquired(deviceId, acquiredInfo, vendorCode);
             });
+            if (mHasPowerButtonFingerprint) {
+                if (acquiredInfo == 6 && vendorCode == 22) {
+                    isScreenOnWhenFingerdown = isScreenOn();
+                }
+
+                if (acquiredInfo == 6 && vendorCode == 23) {
+                    mListenPowerKey.setDealOnChange(false);
+
+                    if (mListenPowerKey.getPowerKeyDown() == 0 && !isScreenOnWhenFingerdown && mOpPackage != null) {
+                        if (isKeyguard(mOpPackage) && isKeyguardLocked()) {
+                            try {
+                                int result = getDaemonWrapper().authenticate(mOpId, mCurrentUserId);
+                                if (result != 0) {
+                                    onError(getHalDeviceId(), 1, 0);
+                                }
+                            } catch (RemoteException e) {
+                                Slog.e(getTag(), "startAuthentication failed", e);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public void saveAuthenResultLocal(BiometricAuthenticator.Identifier newIdentifier, ArrayList<Byte> newToken) {
+            identifier = newIdentifier;
+            token = newToken;
+            mListenPowerKey.setDealOnChange(true);
         }
 
         @Override
@@ -726,6 +762,10 @@ public class FingerprintService extends BiometricServiceBase {
                 }
 
                 final Fingerprint fp = new Fingerprint("", groupId, fingerId, deviceId);
+                if (!isScreenOnWhenFingerdown && mListenPowerKey.getPowerKeyDown() == 0 && mHasPowerButtonFingerprint) {
+                    saveAuthenResultLocal(fp, token);
+                    return;
+                }
                 FingerprintService.super.handleAuthenticated(authenticated, fp, token);
                 if (mHasFod && fp.getBiometricId() != 0) {
                     try {
@@ -894,6 +934,20 @@ public class FingerprintService extends BiometricServiceBase {
         context.registerReceiver(mLockoutReceiver, new IntentFilter(getLockoutResetIntent()),
                 getLockoutBroadcastPermission(), null /* handler */);
         mLockPatternUtils = new LockPatternUtils(context);
+        if (mHasPowerButtonFingerprint) {
+            mListenPowerKey.setListener(new BiometricServiceBase.ListenPowerKey.ChangeListener() {
+                public void onChange(boolean value) {
+                    if (mListenPowerKey.getDealOnChange()) {
+                        if (mListenPowerKey.getPowerKeyDown() == 1 && identifier != null && token != null) {
+                            mHandler.post(() -> {
+                                FingerprintService.super.handleAuthenticated(value, identifier, token);
+                            });
+                        }
+                        mListenPowerKey.setDealOnChange(false);
+                    }
+                }
+            });
+        }
 
         PackageManager packageManager = context.getPackageManager();
         if (packageManager.hasSystemFeature(LineageContextConstants.Features.FOD) || FodUtils.hasFodSupport(context)){
@@ -1203,6 +1257,11 @@ public class FingerprintService extends BiometricServiceBase {
         return PendingIntent.getBroadcast(getContext(), userId,
                 new Intent(getLockoutResetIntent()).putExtra(KEY_LOCKOUT_RESET_USER, userId),
                 PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    public void saveAuthenticateConfig(long opId, String opPackageName) {
+        this.mOpId = opId;
+        this.mOpPackage = opPackageName;
     }
 
     private void dumpInternal(PrintWriter pw) {
