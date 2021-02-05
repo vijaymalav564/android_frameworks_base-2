@@ -75,7 +75,8 @@ public class DozeParameters implements TunerService.Tunable,
                 this,
                 Settings.Secure.DOZE_ALWAYS_ON,
                 Settings.Secure.ACCESSIBILITY_DISPLAY_INVERSION_ENABLED,
-                Settings.Secure.DOZE_ON_CHARGE_NOW);
+                Settings.Secure.DOZE_ON_CHARGE_NOW,
+                Settings.Secure.AOD_NOTIFICATION_PULSE_ACTIVATED);
     }
 
     public void dump(PrintWriter pw) {
@@ -169,6 +170,16 @@ public class DozeParameters implements TunerService.Tunable,
     }
 
     /**
+     * Checks if always on is available and enabled for the current user
+     * without notification pulse - used to check what to do if aod notification pulse stops
+     * @return {@code true} if enabled and available.
+     * @hide
+     */
+    public boolean getAlwaysOnAfterAmbientLight() {
+        return mAmbientDisplayConfiguration.alwaysOnEnabledSetting(UserHandle.USER_CURRENT);
+    }
+
+    /**
      * Some screens need to be completely black before changing the display power mode,
      * unexpected behavior might happen if this parameter isn't respected.
      *
@@ -216,4 +227,5 @@ public class DozeParameters implements TunerService.Tunable,
     public AlwaysOnDisplayPolicy getPolicy() {
         return mAlwaysOnPolicy;
     }
+
 }

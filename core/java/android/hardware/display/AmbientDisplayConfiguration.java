@@ -188,8 +188,15 @@ public class AmbientDisplayConfiguration {
     @TestApi
     public boolean alwaysOnEnabled(int user) {
         return (boolSetting(Settings.Secure.DOZE_ALWAYS_ON, user, mAlwaysOnByDefault ? 1 : 0) ||
-                boolSetting(Settings.Secure.DOZE_ON_CHARGE_NOW, user, 0))
+                boolSetting(Settings.Secure.DOZE_ON_CHARGE_NOW, user, 0) ||
+                boolSetting(Settings.Secure.AOD_NOTIFICATION_PULSE_ACTIVATED, user, 0))
                 && alwaysOnAvailable() && !accessibilityInversionEnabled(user);
+    }
+
+    /** {@hide} */
+    public boolean alwaysOnEnabledSetting(int user) {
+        boolean alwaysOnEnabled = boolSetting(Settings.Secure.DOZE_ALWAYS_ON, user, mAlwaysOnByDefault ? 1 : 0);
+        return alwaysOnEnabled && alwaysOnAvailable() && !accessibilityInversionEnabled(user);
     }
 
     /**
