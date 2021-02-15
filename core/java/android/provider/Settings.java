@@ -5078,6 +5078,12 @@ public final class Settings {
                 "status_bar_custom_header_shadow";
 
         /**
+         * Holds current enabled volume panel implementation
+         * @hide
+         */
+        public static final String SYSTEMUI_PLUGIN_VOLUME = "systemui_plugin_volume";
+
+        /**
          * Header image package to use for daylight header - package name - null if default
          * @hide
          */
