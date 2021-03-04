@@ -3824,12 +3824,10 @@ public class StatusBar extends SystemUI implements DemoMode,
     }
 
     private void updateQSTileStyle() {
-        mUiOffloadThread.execute(() -> {
-            ThemeAccentUtils.setQSTileStyle(mOverlayManager, mQSTileStyle);
-            if (mQSPanel != null) {
-                mQSPanel.getHost().reloadAllTiles();
-            }
-        });
+        ThemeAccentUtils.setQSTileStyle(mOverlayManager, mQSTileStyle);
+        if (mQSPanel != null) {
+            mQSPanel.getHost().reloadAllTiles();
+        }
     }
 
     private void updateSwitchStyle() {
