@@ -624,6 +624,7 @@ public final class PowerManagerService extends SystemService
     // doze on charge
     private boolean mAODAvailable;
     private boolean mDozeOnChargeEnabled;
+    private boolean mDozeOnChargeNow;
 
     private final class ForegroundProfileObserver extends SynchronousUserSwitchObserver {
         @Override
@@ -2197,8 +2198,6 @@ public final class PowerManagerService extends SystemService
                         + ", mBatteryLevel=" + mBatteryLevel);
             }
 
-            updateDozeOnChargeStatus();
-
             if (wasPowered != mIsPowered || oldPlugType != mPlugType) {
                 mDirty |= DIRTY_IS_POWERED;
 
@@ -2237,6 +2236,7 @@ public final class PowerManagerService extends SystemService
 
             mBatterySaverStateMachine.setBatteryStatus(mIsPowered, mBatteryLevel, mBatteryLevelLow);
             updateSmartChargingStatus();
+            updateDozeOnChargeStatus();
         }
     }
 
@@ -2274,8 +2274,9 @@ public final class PowerManagerService extends SystemService
 
     private void updateDozeOnChargeStatus() {
         if (!mAODAvailable) return;
+        mDozeOnChargeNow = mDozeOnChargeEnabled && mIsPowered;
         Settings.Secure.putIntForUser(mContext.getContentResolver(),
-                Settings.Secure.DOZE_ON_CHARGE_NOW, mDozeOnChargeEnabled && mIsPowered ? 1 : 0,
+                Settings.Secure.DOZE_ON_CHARGE_NOW, mDozeOnChargeNow ? 1 : 0,
                 UserHandle.USER_CURRENT);
     }
 
@@ -2313,7 +2314,7 @@ public final class PowerManagerService extends SystemService
 
         // On Always On Display, SystemUI shows the charging indicator
         if (mAODAvailable && mAmbientDisplayConfiguration.alwaysOnEnabled(UserHandle.USER_CURRENT)
-                && getWakefulnessLocked() == WAKEFULNESS_DOZING) {
+                && getWakefulnessLocked() == WAKEFULNESS_DOZING && !mDozeOnChargeNow) {
             return false;
         }
 
