@@ -317,7 +317,7 @@ public class KeyguardSliceProvider extends SliceProvider implements
         return mZenModeController.getZen() != Settings.Global.ZEN_MODE_OFF;
     }
 
-    protected void addWeather(ListBuilder builder) {
+    private void addWeather(ListBuilder builder) {
         if (!mWeatherEnabled || !mShowWeatherSlice || !mWeatherClient.isOmniJawsEnabled() ||
                 mWeatherInfo == null || mPackageInfo == null) {
             return;
