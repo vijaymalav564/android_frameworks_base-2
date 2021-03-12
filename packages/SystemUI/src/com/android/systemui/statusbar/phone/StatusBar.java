@@ -693,6 +693,7 @@ public class StatusBar extends SystemUI implements DemoMode,
     private ActivityManager mActivityManager;
     private boolean mFodVisibility;
     private boolean mIsDreaming;
+    private int mNightMode = -1;
     private FODCircleViewImpl mFODCircleViewImpl;
     private String mTopPkgClass;
     private FODCircleViewImplCallback mFODCircleViewImplCallback =
@@ -700,6 +701,7 @@ public class StatusBar extends SystemUI implements DemoMode,
                 @Override
                 public void onFODStatusChange(boolean isVisible) {
                     boolean isFPClientActive = false;
+                    int nightMode = mUiModeManager.getNightMode();
                     try {
                         isFPClientActive = mFingerprintService.isClientActive();
                     } catch (Exception e) {
@@ -710,9 +712,16 @@ public class StatusBar extends SystemUI implements DemoMode,
                         // if the client is not active, we have to nullify mTopPkgClass before
                         // checking it against current foreground activity
                         mTopPkgClass = null;
+                        if (nightMode != mNightMode && mNightMode != -1) { 
+                            mUiModeManager.setNightMode(mNightMode);
+                        }
                         return;
                     } else if (isVisible && !mIsKeyguard && !mIsDreaming) {
                         mTopPkgClass = getForegroundPackageNameAndClass();
+                        if (nightMode != UiModeManager.MODE_NIGHT_NO) { 
+                            mNightMode = nightMode;
+                            mUiModeManager.setNightMode(UiModeManager.MODE_NIGHT_NO);
+                        }
                     }
                 }
             };
