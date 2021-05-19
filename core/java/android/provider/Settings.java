@@ -10068,6 +10068,12 @@ public final class Settings {
         public static final String PULSE_ON_NEW_TRACKS = "pulse_on_new_tracks";
 
         /**
+         * Whether the device should wake on pick up gesture.
+         * @hide
+         */
+        public static final String WAKE_PICK_UP_GESTURE = "wake_pick_up_gesture";
+
+        /**
          * Keys we no longer back up under the current schema, but want to continue to
          * process when restoring historical backup datasets.
          *
