@@ -448,6 +448,8 @@ public class AndroidSClockController implements ClockPlugin {
     @Override
     public void onTimeTick() {
         animate();
+        mView.onTimeChanged();
+        mClock.refreshTime();
     }
 
     @Override
