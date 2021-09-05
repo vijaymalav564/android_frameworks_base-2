@@ -31,6 +31,7 @@ public class PixelPropsUtils {
     private static final boolean DEBUG = false;
 
     private static final Map<String, Object> propsToChange;
+    private static final Map<String, Object> propsToChangePixelXL;
     private static final Map<String, Object> propsToChangePixel3XL;
     private static final Map<String, Object> propsToChangeOGPixelXL;
 
@@ -56,7 +57,6 @@ public class PixelPropsUtils {
         "com.google.android.as",
         "com.google.android.dialer",
         "com.google.android.ext.services",
-        "com.google.android.gms",
         "com.google.android.gms.location.history",
         "com.google.android.gsf",
         "com.google.android.inputmethod.latin",
@@ -64,6 +64,10 @@ public class PixelPropsUtils {
         "com.google.intelligence.sense",
         "com.google.pixel.dynamicwallpapers",
         "com.google.pixel.livewallpaper"
+    };
+
+    private static final String[] packagesToChangePixelXL = {
+            "com.google.android.gms"
     };
 
     private static final String[] packagesToChangePixel3XL = {
@@ -95,6 +99,18 @@ public class PixelPropsUtils {
         propsToChange.put("IS_USERDEBUG", false);
         propsToChange.put("IS_USER", true);
         propsToChange.put("TYPE", "user");
+        propsToChangePixelXL = new HashMap<>();
+        propsToChangePixelXL.put("BRAND", "google");
+        propsToChangePixelXL.put("MANUFACTURER", "Google");
+        propsToChangePixelXL.put("DEVICE", "marlin");
+        propsToChangePixelXL.put("PRODUCT", "marlin");
+        propsToChangePixelXL.put("MODEL", "Pixel XL");
+        propsToChangePixelXL.put("FINGERPRINT", "google/marlin/marlin:10/QP1A.191005.007.A3/5972272:user/release-keys");
+        propsToChangePixelXL.put("IS_DEBUGGABLE", false);
+        propsToChangePixelXL.put("IS_ENG", false);
+        propsToChangePixelXL.put("IS_USERDEBUG", false);
+        propsToChangePixelXL.put("IS_USER", true);
+        propsToChangePixelXL.put("TYPE", "user");
         propsToChangePixel3XL = new HashMap<>();
         propsToChangePixel3XL.put("BRAND", "google");
         propsToChangePixel3XL.put("MANUFACTURER", "Google");
@@ -135,6 +151,16 @@ public class PixelPropsUtils {
                 if (packageName.equals("com.google.android.gms") && key.equals("MODEL")) {
                     value = value + "\u200b";
                 }
+                setPropValue(key, value);
+            }
+        }
+        if (Arrays.asList(packagesToChangePixelXL).contains(packageName)) {
+            if (DEBUG) {
+                Log.d(TAG, "Defining props for: " + packageName);
+            }
+            for (Map.Entry<String, Object> prop : propsToChangePixelXL.entrySet()) {
+                String key = prop.getKey();
+                Object value = prop.getValue();
                 setPropValue(key, value);
             }
         }
