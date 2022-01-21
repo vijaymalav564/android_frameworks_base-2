@@ -119,4 +119,10 @@
 
   <!-- Whether to show settings for hiding notch fill -->
   <java-symbol type="bool" name="config_showHideNotchSettings" />
+
+  <!-- Whether to cleanup fingerprints upon connection to the daemon and when user switches -->
+  <java-symbol type="bool" name="config_cleanupUnusedFingerprints" />
+
+  <!-- Post reset runnable for all clients -->
+  <java-symbol type="bool" name="config_fingerprintPostResetRunnableForAllClients" />
 </resources>

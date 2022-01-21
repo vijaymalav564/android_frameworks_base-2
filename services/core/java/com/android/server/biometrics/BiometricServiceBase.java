@@ -665,11 +665,11 @@ public abstract class BiometricServiceBase extends SystemService
         mMetricsLogger = new MetricsLogger();
         mCleanupUnusedFingerprints = statsModality() == BiometricsProtoEnums.MODALITY_FINGERPRINT &&
                 mContext.getResources().getBoolean(
-                org.lineageos.platform.internal.R.bool.config_cleanupUnusedFingerprints);
+                com.android.internal.R.bool.config_cleanupUnusedFingerprints);
         mPostResetRunnableForAllClients =
                 statsModality() == BiometricsProtoEnums.MODALITY_FINGERPRINT &&
                 mContext.getResources().getBoolean(
-                org.lineageos.platform.internal.R.bool.config_fingerprintPostResetRunnableForAllClients);
+                com.android.internal.R.bool.config_fingerprintPostResetRunnableForAllClients);
     }
 
     @Override
